@@ -28,7 +28,7 @@ class EncryptionServiceProvider implements ServiceProviderInterface
     {
         $pimple['encryptor'] = function ($app) {
             return new Encryptor(
-                $app['config']->get('corp_id'),
+                $app['config']->get('app_key'),
                 $app['config']->get('token'),
                 $app['config']->get('aes_key')
             );
