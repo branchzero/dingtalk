@@ -71,12 +71,7 @@ class Client extends BaseClient
             return function (RequestInterface $request, array $options) use ($handler) {
                 if ($this->app['access_token']) {
                     if (stripos(self::$httpConfig['base_uri'], 'https://api.') !== false) {
-                        $request = $request->withHeader('x-acs-dingtalk-access-token', $this->app['access_token']->getToken())
-                            ->withUri(
-                                $request->getUri()
-                                    ->withHost(parse_url(self::$httpConfig['base_uri'])['host'])
-                                    ->withPath(self::$version . $request->getUri()->getPath())
-                            );
+                        $request = $request->withHeader('x-acs-dingtalk-access-token', $this->app['access_token']->getToken());
                     } else {
                         parse_str($request->getUri()->getQuery(), $query);
 
@@ -135,6 +130,22 @@ class Client extends BaseClient
     public function postJson(string $url, array $data = [], array $query = [])
     {
         return $this->request($url, 'POST', ['query' => $query, 'json' => $data]);
+    }
+
+    public function request(string $uri, string $method = 'GET', array $options = [], bool $async = false)
+    {
+        if (stripos(self::$httpConfig['base_uri'], 'https://api.') === 0) {
+            $uri = self::$version . '/' . $uri;
+            $options['base_uri'] = self::$httpConfig['base_uri'];
+        }
+
+        $result = $this->requestRaw($uri, $method, $options, $async);
+
+        $transformer = function ($response) {
+            return $this->castResponseToType($response, $this->config->getOption('response_type'));
+        };
+
+        return $async ? $result->then($transformer) : $transformer($result);
     }
 
     public function gateway($gateway = 'latest')
