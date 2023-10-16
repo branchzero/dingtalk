@@ -52,7 +52,7 @@ class Client extends BaseClient
      */
     public function queryInstance($processCode = null, $params = [])
     {
-        $query_params = array_merge(['processCode' => $processCode], $params);
+        $params = array_merge(['processCode' => $processCode], $params);
         if (!array_key_exists('startTime', $params)) {
             $params['startTime'] = Carbon::now()->subDays(30)->getTimestampMs();
         }
@@ -63,7 +63,7 @@ class Client extends BaseClient
             $params['maxResults'] = 20;
         }
 
-        return $this->client->get('workflow/processes/instanceIds/query', ['query' => $query_params]);
+        return $this->client->get('workflow/processes/instanceIds/query', ['query' => $params]);
     }
 
     /**
