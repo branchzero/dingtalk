@@ -77,4 +77,16 @@ class Client extends BaseClient
     {
         return $this->client->get('workflow/processInstances', ['query' => ['processInstanceId' => $instaceCode]]);
     }
+
+    /**
+     * 获取用户待审批数量
+     *
+     * @param string $userId
+     *
+     * @return mixed
+     */
+    public function todoTaskCount($userId)
+    {
+        return $this->client->get('workflow/processes/todoTasks/numbers', ['query' => ['userId' => $userId]]);
+    }
 }
