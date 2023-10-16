@@ -23,6 +23,16 @@ class Client extends BaseClient
      */
     protected $app;
 
+    protected static $version;
+
+    protected static $gateway;
+
+    protected static $gatewayList = [
+        'default'  => 'https://oapi.dingtalk.com',
+        'previous' => 'https://oapi.dingtalk.com',
+        'latest'   => 'https://api.dingtalk.com'
+    ];
+
     /**
      * @var array
      */
@@ -60,11 +70,20 @@ class Client extends BaseClient
         $middleware = function (callable $handler) {
             return function (RequestInterface $request, array $options) use ($handler) {
                 if ($this->app['access_token']) {
-                    parse_str($request->getUri()->getQuery(), $query);
+                    if (stripos(self::$httpConfig['base_uri'], 'https://api.') !== false) {
+                        $request = $request->withHeader('x-acs-dingtalk-access-token', $this->app['access_token']->getToken())
+                            ->withUri(
+                                $request->getUri()
+                                    ->withHost(parse_url(self::$httpConfig['base_uri'])['host'])
+                                    ->withPath(self::$version . $request->getUri()->getPath())
+                            );
+                    } else {
+                        parse_str($request->getUri()->getQuery(), $query);
 
-                    $request = $request->withUri(
-                        $request->getUri()->withQuery(http_build_query(['access_token' => $this->app['access_token']->getToken()] + $query))
-                    );
+                        $request = $request->withUri(
+                            $request->getUri()->withQuery(http_build_query(['access_token' => $this->app['access_token']->getToken()] + $query))
+                        );
+                    }
                 }
 
                 return $handler($request, $options);
@@ -116,5 +135,38 @@ class Client extends BaseClient
     public function postJson(string $url, array $data = [], array $query = [])
     {
         return $this->request($url, 'POST', ['query' => $query, 'json' => $data]);
+    }
+
+    public function gateway($gateway = 'latest')
+    {
+        self::$gateway = $gateway;
+        if (!array_key_exists($gateway, self::$gatewayList)) {
+            self::$gatewayList[$gateway] = $gateway;
+        }
+        self::$httpConfig['base_uri'] = self::$gatewayList[$gateway];
+        if ($gateway == 'latest') {
+            $this->version();
+        }
+
+        return $this;
+    }
+
+    public function version($version = 'v1.0')
+    {
+        if (!empty($version)) {
+            self::$version = $version;
+        }
+
+        return $this;
+    }
+
+    public function getVersion()
+    {
+        return self::$version;
+    }
+
+    public function getGateway()
+    {
+        return self::$gateway;
     }
 }

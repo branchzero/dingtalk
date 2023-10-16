@@ -60,6 +60,7 @@ class Application extends Container
         Checkin\ServiceProvider::class,
         Contact\ServiceProvider::class,
         Process\ServiceProvider::class,
+        Workflow\ServiceProvider::class,
         Calendar\ServiceProvider::class,
         Callback\ServiceProvider::class,
         Microapp\ServiceProvider::class,
@@ -104,5 +105,19 @@ class Application extends Container
     public function __get($name)
     {
         return $this[$name];
+    }
+
+    public function gateway($gateway = 'latest')
+    {
+        $this->client = $this->client->gateway($gateway);
+
+        return $this;
+    }
+
+    public function version($version)
+    {
+        $this->client = $this->client->version($version);
+
+        return $this;
     }
 }
