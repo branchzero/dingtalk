@@ -63,7 +63,7 @@ class Client extends BaseClient
             $params['maxResults'] = 20;
         }
 
-        return $this->client->get('workflow/processes/instanceIds/query', ['query' => $params]);
+        return $this->client->postJson('workflow/processes/instanceIds/query', $params);
     }
 
     /**
