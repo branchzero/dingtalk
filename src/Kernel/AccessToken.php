@@ -11,10 +11,12 @@
 
 namespace EasyDingTalk\Kernel;
 
+use EasyDingTalk\Kernel\Exceptions\InvalidArgumentException;
 use EasyDingTalk\Kernel\Exceptions\InvalidCredentialsException;
 use EasyDingTalk\Kernel\Http\Client;
-use function EasyDingTalk\tap;
 use Overtrue\Http\Traits\ResponseCastable;
+
+use function EasyDingTalk\tap;
 
 class AccessToken
 {
@@ -60,7 +62,7 @@ class AccessToken
      */
     public function getToken()
     {
-        return $this->get()['access_token'];
+        return $this->get()['access_token'] ?? $this->get()['accessToken'] ?? null;
     }
 
     /**
@@ -71,15 +73,17 @@ class AccessToken
     public function refresh()
     {
         $response = (new Client($this->app))->requestRaw('gettoken', 'GET', ['query' => [
-            'appkey' => $this->app['config']->get('app_key'),
+            'appkey'    => $this->app['config']->get('app_key'),
             'appsecret' => $this->app['config']->get('app_secret'),
         ]]);
 
         return tap($this->castResponseToType($response, 'array'), function ($value) {
-            if (0 !== $value['errcode']) {
+            if ((!array_key_exists('accessToken', $value) && !array_key_exists('errcode', $value))
+                || ((array_key_exists('access_token', $value) || (array_key_exists('errmsg', $value)) && 0 !== $value['errcode']))
+            ) {
                 throw new InvalidCredentialsException(json_encode($value));
             }
-            $this->getCache()->set($this->cacheFor(), $value, $value['expires_in']);
+            $this->getCache()->set($this->cacheFor(), $value, $value['expires_in'] ?? $value['expiresIn'] ?? 7200);
         });
     }
 
@@ -90,6 +94,17 @@ class AccessToken
      */
     protected function cacheFor()
     {
-        return sprintf('access_token.%s', $this->app['config']->get('app_key'));
+        $mode = $this->app['config']->get('mode');
+        if ($mode === 0) {
+            $fmt = 'access_token.%s';
+        } elseif ($mode) {
+            $fmt = 'access_token.%s.corp_id.%s';
+        } elseif ($mode) {
+            $fmt = 'access_token.%s';
+        } else {
+            throw new InvalidArgumentException('mode is not supported:' . $mode);
+        }
+
+        return sprintf($fmt, $this->app['config']->get('app_key'), $this->app['config']->get('auth_corp_id'));
     }
 }

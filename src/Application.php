@@ -37,6 +37,7 @@ use Pimple\Container;
  * @property \EasyDingTalk\Conversation\Client $conversation
  * @property \EasyDingTalk\Smartwork\Client $smartwork
  * @property \EasyDingTalk\Kernel\Http\Client $client
+ * @property \EasyDingTalk\Edu\Client $edu
  * @property \Monolog\Logger $logger
  * @property \EasyDingTalk\Kernel\Server $server
  * @property \Symfony\Component\HttpFoundation\Request $request
@@ -45,6 +46,21 @@ use Pimple\Container;
  */
 class Application extends Container
 {
+    /**
+     * 企业内部.
+     */
+    public const MODE_NORMAL = 0;
+
+    /**
+     * 第三方企业.
+     */
+    public const MODE_THIRD_PARTY_CORP = 1;
+
+    /**
+     * 第三方个人.
+     */
+    public const MODE_THIRD_PARTY_INDIVIDUALS = 2;
+
     /**
      * @var array
      */
@@ -70,6 +86,7 @@ class Application extends Container
         Department\ServiceProvider::class,
         Conversation\ServiceProvider::class,
         Smartwork\ServiceProvider::class,
+        Edu\ServiceProvider::class,
         Kernel\Providers\ClientServiceProvider::class,
         Kernel\Providers\LoggerServiceProvider::class,
         Kernel\Providers\ServerServiceProvider::class,
@@ -117,6 +134,13 @@ class Application extends Container
     public function version($version)
     {
         $this->client = $this->client->version($version);
+
+        return $this;
+    }
+
+    public function authCorpId($auth_corp_id)
+    {
+        $this['config']->set('auth_corp_id', $auth_corp_id);
 
         return $this;
     }
