@@ -56,6 +56,10 @@ class Client extends BaseClient
     public function setHttpConfig(array $config)
     {
         static::$httpConfig = array_merge(static::$httpConfig, $config);
+        if (\is_array($config)) {
+            $config = new Config(static::$httpConfig);
+        }
+        $this->setConfig($config);
     }
 
     /**
@@ -155,6 +159,7 @@ class Client extends BaseClient
             self::$gatewayList[$gateway] = $gateway;
         }
         self::$httpConfig['base_uri'] = self::$gatewayList[$gateway];
+        $this->setHttpConfig([]);
         if ($gateway == 'latest') {
             $this->version();
         }
