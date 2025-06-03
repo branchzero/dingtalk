@@ -46,6 +46,8 @@ use Pimple\Container;
  */
 class Application extends Container
 {
+    use Kernel\Concerns\InteractsWithCache;
+
     /**
      * 企业内部.
      */
@@ -143,5 +145,16 @@ class Application extends Container
         $this['config']->set('auth_corp_id', $auth_corp_id);
 
         return $this;
+    }
+
+    public function getSuiteTicket($suite_id = null)
+    {
+        $suite_id = $suite_id ?? $this['config']->get('suite_id');
+        $ticket = $this['config']->get('ticket.' . $suite_id);
+        if (empty($ticket)) {
+            $ticket = $this->getCache()->get('ticket.' . $suite_id);
+        }
+
+        return $ticket;
     }
 }
