@@ -72,10 +72,29 @@ class AccessToken
      */
     public function refresh()
     {
-        $response = (new Client($this->app))->requestRaw('gettoken', 'GET', ['query' => [
-            'appkey'    => $this->app['config']->get('app_key'),
-            'appsecret' => $this->app['config']->get('app_secret'),
-        ]]);
+        $mode = $this->app['config']->get('mode');
+        $client = (new Client($this->app));
+        if ($mode === 0) {
+            $response = $client->requestRaw('gettoken', 'GET', ['query' => [
+                'appKey'    => $this->app['config']->get('app_key'),
+                'appSecret' => $this->app['config']->get('app_secret'),
+            ]]);
+        } elseif ($mode) {
+            $response = $client->gateway()->requestRaw('v1.0/oauth2/corpAccessToken', 'POST', ['json' => [
+                'suiteKey'    => $this->app['config']->get('app_key'),
+                'suiteSecret' => $this->app['config']->get('app_secret'),
+                'authCorpId'  => $this->app['config']->get('auth_corp_id'),
+                'suiteTicket' => $this->app->getSuiteTicket()
+            ]]);
+        } elseif ($mode) {
+            // TODO: test
+            $response = $client->requestRaw('sns/gettoken', 'GET', ['query' => [
+                'appKey'    => $this->app['config']->get('app_key'),
+                'appSecret' => $this->app['config']->get('app_secret'),
+            ]]);
+        } else {
+            throw new InvalidArgumentException('mode is not supported:' . $mode);
+        }
 
         return tap($this->castResponseToType($response, 'array'), function ($value) {
             if ((!array_key_exists('accessToken', $value) && !array_key_exists('errcode', $value))
